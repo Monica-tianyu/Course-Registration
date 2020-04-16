@@ -1,0 +1,371 @@
+#include"data.h"
+#include<iostream>
+#include<vector>
+
+using namespace std;
+
+//报名助教
+void signup_assistant(char * ID)
+{
+	//读取助教文件信息
+	FILE *fp = fopen("assistant.txt", "r+");
+	if (fp == NULL)
+	{		
+		cout << "课程尚未录入！" << endl;
+		choice2(ID);
+	}
+	vector<Assistant> ass;
+	Assistant a;
+	fscanf(fp, "%s%s", &a.course_number, &a.assistant);
+	while (!feof(fp))
+	{
+		ass.push_back(a);
+		fscanf(fp, "%s%s", &a.course_number, &a.assistant);
+	}
+	fclose(fp);
+
+	int number = 0;
+	unsigned i = 0;
+	for (; i < ass.size(); ++i)
+	{
+		if (find_substring(ass[i].assistant, ID) == 1)
+		{
+			number++;
+		}
+	}
+	if (number >= 2)
+	{
+		cout << "您已是2门课程的助教，无法再报名助教！" << endl;
+		choice2(ID);
+		return;
+	}
+
+	//读取学生选课信息
+	char nch[20];
+	strcpy(nch, ID);
+	strcat(nch, ".txt");
+	fp = fopen(nch, "r");
+	if (fp == NULL)
+	{
+		cout << "打开失败！" << endl;
+		exit(-1);
+	}
+	vector<PersonalCourse> personalcourse;
+	PersonalCourse p;
+	fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+	while (!feof(fp))
+	{
+		personalcourse.push_back(p);
+		fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+		//personalcourse.push_back(p);
+	}
+	fclose(fp);
+
+	cout << "输入课程ID：";
+	char  ch[10];
+	cin >> ch;
+	//检验是否选择该课程
+	bool flag = false;
+	//unsigned i = 0;
+	for (i=0; i < personalcourse.size(); ++i)
+	{
+		if (compare(ch, personalcourse[i].course_number) == 1)
+		{
+			flag = true;
+			break;
+		}
+	}
+	if (flag == false)
+	{
+		cout << "该课程不在您的个人课表内！" << endl;
+		cout << "请选择：1.继续报名助教 2.进行其他操作（输入单个数字1或2）";
+		int k;
+		cin >> k;
+		if (k == 1)
+		{
+			signup_assistant(ID);
+		}
+		if (k == 2)
+		{
+			choice2(ID);
+		}
+	}
+	if (flag == true)
+	{
+		int m = shift(personalcourse[i].course_number);
+		unsigned b;
+		for (b = 0; b < ass.size(); ++b)
+		{
+			if (shift(ass[b].course_number) == m)
+			{
+				break;
+			}
+		}
+		//cout << "yes" << endl;
+		if (ass[b].assistant[0] != 'N')
+		{
+			//检验是否已报名
+			if (find_substring(ass[b].assistant, ID) == 1)
+			{
+				cout << "您已是该课程助教，不可重复报名！" << endl;
+				cout << "请选择：1.继续报名助教 2.进行其他操作（输入单个数字1或2）";
+				int k;
+				cin >> k;
+				if (k == 1)
+				{
+					signup_assistant(ID);
+				}
+				if (k == 2)
+				{
+					choice2(ID);
+				}
+			}
+			if (find_substring(ass[b].assistant, ID) == 0)
+			{
+				strcat(ass[b].assistant, ",");
+				strcat(ass[b].assistant, ID);
+			}														
+		}
+		//cout << "yes" << endl;
+		if (ass[b].assistant[0] == 'N')
+		{
+			strcpy(ass[b].assistant, ID);
+		}
+		//同步更新到assistant文件
+		fp = fopen("assistant.txt", "w+");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		for (i = 0; i < ass.size(); ++i)
+		{
+			fprintf(fp, "%s\t%s\n", &ass[i].course_number, &ass[i].assistant);
+		}
+		fclose(fp);
+		cout << "报名成功！" << endl;
+		choice2(ID);
+	}
+}
+
+//选择个人助教
+void choose_assistant(char * ID)
+{
+	//读取助教文件信息
+	FILE *fp = fopen("assistant.txt", "r+");
+	if (fp == NULL)
+	{
+		cout << "课程尚未录入！" << endl;
+		choice2(ID);
+	}
+	vector<Assistant> ass;
+	Assistant a;
+	fscanf(fp, "%s%s", &a.course_number, &a.assistant);
+	while (!feof(fp))
+	{
+		ass.push_back(a);
+		fscanf(fp, "%s%s", &a.course_number, &a.assistant);
+	}
+	fclose(fp);
+
+	cout << "输入课程ID：";
+	char ch[10];
+	cin >> ch;
+
+	//读取学生选课信息
+	char nch[20];
+	strcpy(nch, ID);
+	strcat(nch, ".txt");
+	fp = fopen(nch, "r");
+	if (fp == NULL)
+	{
+		cout << "打开失败！" << endl;
+		exit(-1);
+	}
+	vector<PersonalCourse> personalcourse;
+	PersonalCourse p;
+	fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+	while (!feof(fp))
+	{
+		personalcourse.push_back(p);
+		fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+		//personalcourse.push_back(p);
+	}
+	fclose(fp);
+
+	unsigned i = 0;
+	bool flag = false;
+	for (; i < personalcourse.size(); ++i)
+	{
+		if (compare(ch, personalcourse[i].course_number) == 1)
+		{
+			flag = true;
+			break;
+		}
+	}
+	if (flag == false)
+	{
+		cout << "您并未选择该课程！" << endl;
+		cout << "请选择：1.继续选择助教 2.进行其他操作 （输入单个数字1或2）";
+		int k;
+		cin >> k;
+		if (k == 1)
+		{
+			choose_assistant(ID);
+		}
+		if (k == 2)
+		{
+			choice2(ID);
+		}
+	}
+	if (flag == true)
+	{
+		if (personalcourse[i].assistant[0] != 'N')
+		{
+			cout << "该课程您已拥有助教，无法再次选择！" << endl;
+			cout << "请选择：1.继续选择助教 2.进行其他操作 （输入单个数字1或2）";
+			int k;
+			cin >> k;
+			if (k == 1)
+			{
+				choose_assistant(ID);
+			}
+			if (k == 2)
+			{
+				choice2(ID);
+			}
+		}
+		if (personalcourse[i].assistant[0] == 'N')
+		{
+			int m = shift(personalcourse[i].course_number);
+			unsigned b;
+			for (b = 0; b < ass.size(); ++b)
+			{
+				if (shift(ass[b].course_number) == m)
+				{
+					break;
+				}
+			}
+			if (ass[b].assistant[0] == 'N')
+			{
+				cout << "目前这门课没有助教！" << endl;
+				cout << "请选择：1.继续选择助教 2.进行其他操作 （输入单个数字1或2）";
+				int k;
+				cin >> k;
+				if (k == 1)
+				{
+					choose_assistant(ID);
+				}
+				if (k == 2)
+				{
+					choice2(ID);
+				}
+			}
+			if (ass[b].assistant[0] != 'N')
+			{
+				cout << "目前这门课的助教有：";
+				cout << ass[b].assistant << endl;
+				cout << "请在上述助教中选择你的助教：";
+				char ach[20];
+				cin >> ach;
+				while (find_substring(ass[b].assistant, ach) == 0)
+				{
+					cout << "该学生不是本课程助教，请重新选择！" << endl;
+					cin >> ach;
+				}
+				if (compare(ach, ID) == 1)
+				{
+					cout << "不可选择自己为助教！" << endl;
+					choice2(ID);
+					return;
+				}
+				strcpy(personalcourse[i].assistant, ach);
+				//同步更新到学生个人课表
+				fp = fopen(nch, "w");
+				if (fp == NULL)
+				{
+					cout << "打开失败！" << endl;
+					exit(-1);
+				}
+				for (i = 0; i < personalcourse.size(); ++i)
+				{
+					fprintf(fp, "%s\t%s\t%d\n", personalcourse[i].course_number, personalcourse[i].assistant, personalcourse[i].if_evaluate);
+				}
+				fclose(fp);
+				cout << "已完成个人助教选择！" << endl;
+				choice2(ID);
+			}
+		}
+	}
+}
+
+
+//查找子串
+int find_substring(const char ch[], const char c[])
+{
+	int len = strlen(ch);
+	int l = strlen(c);
+	if (l != 9)
+	{
+		return 0;
+	}
+	int i, j;
+	for (i = 0; i < len; ++i)
+	{
+		for ( j = 0; c[j]!='\0'; ++j)
+		{
+			if (ch[i] != c[j])
+				break;
+			if (ch[i] == c[j])
+				++i;
+		}
+		if (c[j] == '\0')
+		{
+			return 1;
+		}
+	}
+	return 0;
+}
+
+//删除子串
+char * del_substring( char ch[], const char c[])
+{
+	int len = strlen(ch);
+	int l = strlen(c);
+	if (len <= 10)
+	{
+		strcpy(ch, "NULL");
+	}
+	if (len > 10)
+	{
+		int i, j;
+		for (i = 0; i < len; ++i)
+		{
+			for (j = 0; c[j]!='\0'; ++j)
+			{
+				if (ch[i] != c[j])
+					break;
+				if (ch[i] == c[j])
+					++i;
+			}
+			if (c[j] == '\0')
+			{
+				break;
+			}
+		}
+		if (ch[i] == '\0')
+		{
+			ch[i - 10] = '\0';
+		}
+		if (ch[i] != '\0')
+		{
+			int k = 0;
+			for ( k = 0;ch[i+1+k]!='\0';++k)
+			{
+				ch[i - 9 + k] = ch[i + 1 + k];
+			}
+			ch[i - 9 + k] = '\0';
+		}
+	}
+	return ch;
+}
