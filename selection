@@ -1,0 +1,640 @@
+#include"data.h"
+#include<iostream>
+#include<vector>
+
+using namespace std;
+
+
+//选课
+void select(char *ID)
+{
+	//读取学生选课数据
+	char nch[20];
+	strcpy(nch, ID);
+	strcat(nch, ".txt");
+	//cout << nch << endl;
+	FILE *fp = fopen(nch, "r+");
+	if (fp == NULL)
+	{
+		cout << "打开失败！" << endl;
+		exit(-1);
+	}
+	vector<PersonalCourse> personalcourse;
+	PersonalCourse p;
+	fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+	while (!feof(fp))
+	{
+		personalcourse.push_back(p);
+		fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+		//personalcourse.push_back(p);
+	}
+	fclose(fp);
+	
+	cout << "输入课程ID：";
+	char ch[10];
+	cin >> ch;
+	//检验该课程是否存在
+	fp = fopen("current_course.txt", "r+");
+	if (fp == NULL)
+	{
+		cout << "课程尚未录入！" << endl;
+		choice2(ID);
+	}
+	vector<Course> course;
+	Course c;
+	fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty,&c.count,&c.score);
+	while (!feof(fp))
+	{
+		course.push_back(c);
+		fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty,&c.count,&c.score);
+	}
+	fclose(fp);
+
+	bool f = false;
+	unsigned i = 0;
+	for (; i < course.size(); ++i)
+	{
+		if (compare(ch, course[i].course_number) == 1)
+		{
+			f = true;
+			break;
+		}
+	}
+	if (f == false)
+	{
+		cout << "该课程不存在!" << endl;
+		cout << "请选择：1.继续选课 2.进行其他操作 （输入单个数字1或2）";
+		int k;
+		cin >> k;
+		if (k == 1)
+		{
+			select(ID);
+		}
+		if (k == 2)
+		{
+			choice2(ID);
+		}
+	}
+	if (f == true)
+	{
+		bool flag = false;
+		unsigned x = 0;
+		for (; x < personalcourse.size(); ++x)
+		{
+			if (compare(ch, personalcourse[x].course_number) == 1)
+			{
+				flag = true;
+				break;
+			}
+		}
+		if (flag == true)
+		{
+			cout << "该课程已选择!请不要重复选课！" << endl;
+			cout << "请选择：1.继续选课 2.进行其他操作 （输入单个数字1或2）";
+			int k;
+			cin >> k;
+			if (k == 1)
+			{
+				select(ID);
+			}
+			if (k == 2)
+			{
+				choice2(ID);
+			}
+		}
+		if (flag == false)
+		{
+			//课程信息中已选人数+1
+			fp = fopen("current_course.txt", "r+");
+			if (fp == NULL)
+			{
+				cout << "打开失败！" << endl;
+				exit(-1);
+			}
+			vector<Course> course;
+			Course c;
+			fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty,&c.count,&c.score);
+			//course.push_back(c);
+			while (!feof(fp))
+			{
+				course.push_back(c);
+				fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty,&c.count,&c.score);
+				//course.push_back(c);
+			}
+			fclose(fp);
+			if (course[i].capacity == course[i].current_number)
+			{
+				cout << "该课程人数已满，选课失败！" << endl;
+				cout << "请选择：1.继续选课 2.进行其他操作 （输入单个数字1或2）";
+				int k;
+				cin >> k;
+				if (k == 1)
+				{
+					select(ID);
+				}
+				if (k == 2)
+				{
+					choice2(ID);
+				}
+				return;
+
+			}
+			course[i].current_number++;
+			fp = fopen("current_course.txt", "w+");
+			if (fp == NULL)
+			{
+				cout << "打开失败！" << endl;
+				exit(-1);
+			}
+			for (x = 0; x < course.size(); ++x)
+			{
+				fprintf(fp, "%10s\t%10s\t%10s\t%10d\t%10d\t%10s%10s%10d%10f\n", course[x].course_number, course[x].course_name, course[x].teacher, course[x].capacity, course[x].current_number, course[x].type,course[x].difficulty,course[x].count,course[x].score);
+			}
+			fclose(fp);
+
+
+			for (x = 0; x < personalcourse.size(); ++x)
+			{
+				if (shift(personalcourse[x].course_number) - shift(ch) > 0)
+				{
+					strcpy(p.course_number, ch);
+					strcpy(p.assistant, "NULL");
+					personalcourse.insert(personalcourse.begin() + x, 1, p);
+					break;
+				}
+			}
+			//cout << p.course_number << endl;
+			int size = personalcourse.size();
+			if (size == 0||shift(personalcourse[size-1].course_number)-shift(ch)<0)
+			{
+				strcpy(p.course_number, ch);
+				strcpy(p.assistant, "NULL");
+				p.if_evaluate = 0;
+				personalcourse.push_back(p);
+			}
+			
+			fp = fopen(nch, "w");
+			if (fp == NULL)
+			{
+				cout << "打开失败！" << endl;
+				exit(-1);
+			}
+			for (x = 0; x < personalcourse.size(); ++x)
+			{
+				fprintf(fp, "%s\t%s\t%d\n", personalcourse[x].course_number, personalcourse[x].assistant, personalcourse[x].if_evaluate);
+			}
+			fclose(fp);
+																		
+			cout << "选课成功！" << endl;
+			choice2(ID);
+
+		}
+	}
+}
+
+//字符串转化为整数
+int shift(char *course_ID)
+{
+	return course_ID[2] - '0' + 10 * (course_ID[1] - '0') + 100 * (course_ID[0] - '0');
+}
+
+//学生查看课程信息
+void show_course2(char *ID)
+{
+	FILE *fp = fopen("current_course.txt", "r");
+	if (fp == NULL)
+	{
+		cout << "课程尚未录入！" << endl;
+		choice2(ID);
+	}
+	vector<Course> course;
+	Course c;
+	fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty,&c.count,&c.score);
+	course.push_back(c);
+	//cout << course.size() << endl;
+	fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty, &c.count, &c.score);
+	while (!feof(fp))
+	{
+		course.push_back(c);
+		fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty, &c.count, &c.score);
+	}
+	fclose(fp);
+	//cout << course.size() << endl;
+	cout.setf(ios::left);
+	cout.width(10);
+	cout << "课程编号";
+	cout.width(20);
+	cout << "课程名称";
+	cout.width(10);
+	cout << "授课老师";
+	cout.width(10);
+	cout << "容纳人数";
+	cout.width(10);
+	cout << "已选人数";
+	cout.width(10);
+	cout << "课程类型";
+	cout.width(10);
+	cout << "难易程度";
+	cout.width(10);
+	cout << "评分人数";
+	cout.width(10);
+	cout << "平均评分" << endl;
+
+	for (unsigned i = 0; i < course.size(); ++i)
+	{
+		cout.width(10);
+		cout << course[i].course_number;
+		cout.width(20);
+		cout << course[i].course_name;
+		cout.width(10);
+		cout << course[i].teacher;
+		cout.width(10);
+		cout << course[i].capacity;
+		cout.width(10);
+		cout << course[i].current_number;
+		cout.width(10);
+		cout << course[i].type;
+		cout.width(10);
+		cout << course[i].difficulty;
+		cout.width(10);
+		cout << course[i].count;
+		cout.width(10);
+		cout << course[i].score << endl;
+	}
+	choice2(ID);
+}
+
+//退课
+void quit_course(char * ID)
+{
+	//读取学生选课数据
+	char nch[20];
+	strcpy(nch, ID);
+	strcat(nch, ".txt");
+	FILE *fp = fopen(nch, "r+");
+	if (fp == NULL)
+	{
+		cout << "打开失败！" << endl;
+		exit(-1);
+	}
+	vector<PersonalCourse> personalcourse;
+	PersonalCourse p;
+	fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+	while (!feof(fp))
+	{
+		personalcourse.push_back(p);
+		fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+		//personalcourse.push_back(p);
+	}
+	fclose(fp);
+
+	cout << "输入课程ID：";
+	char ch[10];
+	cin >> ch;
+	
+	//检验该课程是否存在
+	bool f = false;
+	unsigned i = 0;
+	for (; i < personalcourse.size(); ++i)
+	{
+		if (compare(ch, personalcourse[i].course_number) == 1)
+		{
+			f = true;
+			break;
+		}
+	}
+	if (f == false)
+	{
+		cout << "该课程未选择，无法删除！" << endl;
+		cout << "请选择：1.继续退课 2.进行其他操作 （输入单个数字1或2）";
+		int k;
+		cin >> k;
+		if (k == 1)
+		{
+			quit_course(ID);
+		}
+		if (k == 2)
+		{
+			choice2(ID);
+		}
+	}
+	if (f == true)
+	{
+		personalcourse.erase(personalcourse.begin() + i);
+		fp = fopen(nch, "w+");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		
+		for (i = 0; i < personalcourse.size(); ++i)
+		{
+			fprintf(fp, "%s\t%s\t%d\n", personalcourse[i].course_number, personalcourse[i].assistant, personalcourse[i].if_evaluate);
+		}
+		fclose(fp);
+		//助教提醒
+		//current人数-1
+		fp = fopen("current_course.txt", "r+");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		vector<Course> course;
+		Course c;
+		fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty,&c.count,&c.score);
+		//course.push_back(c);
+		while (!feof(fp))
+		{
+			course.push_back(c);
+			fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type,&c.difficulty, &c.count, &c.score);
+			//course.push_back(c);
+		}
+		fclose(fp);
+
+		bool ff = false;
+		unsigned x = 0;
+		for (; x < course.size(); ++x)
+		{
+			if (compare(ch, course[x].course_number) == 1)
+			{
+				ff = true;
+				break;
+			}
+		}
+
+		course[x].current_number--;
+		fp = fopen("current_course.txt", "w+");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		for (i = 0; i < course.size(); ++i)
+		{
+			fprintf(fp, "%10s\t%10s\t%10s\t%10d\t%10d\t%10s%10s%10d%10f\n", course[i].course_number, course[i].course_name, course[i].teacher, course[i].capacity, course[i].current_number, course[i].type, course[i].difficulty,course[i].count,course[i].score);
+		}
+		fclose(fp);
+
+		//修改助教文件，通知学生
+		fp = fopen("student.txt", "r");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		vector<Student> stu;
+		char temp[50];
+		fscanf(fp, "%s", temp);
+		while (!feof(fp))
+		{
+			char *p;
+			Student s;
+			p = strtok(temp, ",");
+			s.student_ID = (char*)malloc(sizeof(temp));
+			strcpy(s.student_ID, p);
+			p = strtok(NULL, ",");
+			s.key = (char *)malloc(sizeof(temp));
+			strcpy(s.key, p);
+			stu.push_back(s);
+			fscanf(fp, "%s", temp);
+		}
+		fclose(fp);
+		for (unsigned q = 0; q < stu.size(); ++q)
+		{
+			char nch[20];
+			strcpy(nch, stu[q].student_ID);
+			strcat(nch, ".txt");
+			fp = fopen(nch, "r");
+			if (fp == NULL)
+			{
+				cout << "打开失败！" << endl;
+				exit(-1);
+			}
+			vector<PersonalCourse> personalcourse;
+			PersonalCourse p;
+			fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+			while (!feof(fp))
+			{
+				personalcourse.push_back(p);
+				fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+			}
+			fclose(fp);
+			unsigned w;
+			for ( w = 0; w < personalcourse.size(); ++w)
+			{
+				if (compare(personalcourse[w].course_number, course[x].course_number) == 1&& compare(personalcourse[w].assistant, ID) == 1)
+				{					
+					strcpy(personalcourse[w].assistant, "NULL");
+					break;
+				}
+			}
+			//更新到学生个人课表
+			fp = fopen(nch, "w");
+			if (fp == NULL)
+			{
+				cout << "打开失败！" << endl;
+				exit(-1);
+			}
+			for (w = 0; w < personalcourse.size(); ++w)
+			{
+				fprintf(fp, "%s\t%s\t%d\n", personalcourse[w].course_number, personalcourse[w].assistant, personalcourse[w].if_evaluate);
+			}
+			fclose(fp);
+
+			
+		}
+		fp = fopen("assistant.txt", "r+");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		vector<Assistant> ass;
+		Assistant a;
+		fscanf(fp, "%s%s", &a.course_number, &a.assistant);
+		while (!feof(fp))
+		{
+			ass.push_back(a);
+			fscanf(fp, "%s%s", &a.course_number, &a.assistant);
+		}
+		fclose(fp);
+		unsigned e = 0;
+		for (; e < ass.size(); ++e)
+		{
+			if (shift(ass[e].course_number) == shift(course[x].course_number))
+			{
+				break;
+			}
+		}
+		if (find_substring(ass[e].assistant, ID) == 1)
+		{
+			strcpy(ass[e].assistant,del_substring(ass[e].assistant, ID));
+		}
+		fp = fopen("assistant.txt", "w+");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		for (e = 0; e < ass.size(); ++e)
+		{
+			fprintf(fp, "%s\t%s\n", &ass[e].course_number, &ass[e].assistant);
+		}
+		fclose(fp);
+				
+		cout << "退课成功！" << endl;
+		cout << "目前所选的课程有：" << endl;
+		check(ID);
+
+	}
+
+}
+
+//学生对课程难易评分
+void evaluation(char *ID)
+{
+	//读取数据
+	FILE *fp = fopen("current_course.txt", "r+");
+	if (fp == NULL)
+	{
+		cout << "打开失败！" << endl;
+		exit(-1);
+	}
+	vector<Course> course;
+	Course c;
+	fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type, &c.difficulty,&c.count,&c.score);
+	while (!feof(fp))
+	{
+		course.push_back(c);
+		fscanf(fp, "%s%s%s%d%d%s%s%d%f", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type, &c.difficulty, &c.count, &c.score);
+	}
+	fclose(fp);
+
+
+	cout << "输入要评分的课程编号：";
+	char number[10];
+	cin >> number;
+
+	bool flag = false;
+	unsigned i;
+	for (i = 0; i < course.size(); ++i)
+	{
+		if (compare(number, course[i].course_number) == 1)
+		{
+			flag = true;
+			break;
+		}
+	}
+	if (flag == false)
+	{
+		cout << "该课程不存在！" << endl;
+		cout << "请选择：1.继续评分 2.进行其他操作";
+		int op;
+		cin >> op;
+		if (op == 1)
+		{
+			evaluation(ID);
+		}
+		if (op == 2)
+		{
+			choice2(ID);
+		}
+	}
+	if (flag == true)
+	{		
+		//读取学生选课数据
+		char nch[20];
+		strcpy(nch, ID);
+		strcat(nch, ".txt");
+		fp = fopen(nch, "r+");
+		if (fp == NULL)
+		{
+			cout << "打开失败！" << endl;
+			exit(-1);
+		}
+		vector<PersonalCourse> personalcourse;
+		PersonalCourse p;
+		fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+		while (!feof(fp))
+		{
+			personalcourse.push_back(p);
+			fscanf(fp, "%s%s%d", &p.course_number, &p.assistant, &p.if_evaluate);
+		}
+		fclose(fp);
+
+		unsigned x;
+		bool f = false;
+		for (x = 0; x < personalcourse.size(); ++x)
+		{
+			if (compare(personalcourse[x].course_number, course[i].course_number) == 1)
+			{
+				personalcourse[x].if_evaluate = 1;
+				f = true;
+				break;
+			}
+		}
+		if (f == false)
+		{
+			cout << "您并未选择这门课程，无法进行评分！" << endl;
+			cout << "请选择：1.继续评分 2.进行其他操作" << endl;
+			int option;
+			cin >> option;
+			if (option == 1)
+			{
+				evaluation(ID);
+			}
+			if (option == 2)
+			{
+				choice2(ID);
+			}
+		}
+		if (f == true)
+		{
+			fp = fopen(nch, "w+");
+			if (fp == NULL)
+			{
+				cout << "打开失败！" << endl;
+				exit(-1);
+			}
+			for (x = 0; x < personalcourse.size(); ++x)
+			{
+				fprintf(fp, "%s\t%s\t%d\n", personalcourse[x].course_number, personalcourse[x].assistant, personalcourse[x].if_evaluate);
+			}
+			fclose(fp);
+
+			cout << "输入评分（请填写1-5的数字，数字越大，难度越大）：";
+			float s;
+			cin >> s;
+			while (s < 1 || s>5)
+			{
+				cout << "输入不符合标准！请重新输入！" << endl;
+				cin >> s;
+			}
+			course[i].score = (course[i].score*course[i].count + s) / (course[i].count + 1);
+			course[i].count++;
+			int c = floor(course[i].score + 0.5);
+			strcpy(course[i].difficulty, "*");
+			for (int j = 1; j < c; ++j)
+			{
+				strcat(course[i].difficulty, "*");
+			}
+			fp = fopen("current_course.txt", "w+");
+			if (fp == NULL)
+			{
+				cout << "打开失败！" << endl;
+				exit(-1);
+			}
+			
+			for (x = 0; x < course.size(); ++x)
+			{
+				fprintf(fp, "%10s\t%10s\t%10s\t%10d\t%10d\t%10s\t%10s\t%10d\t%10f\n", course[x].course_number, course[x].course_name, course[x].teacher, course[x].capacity, course[x].current_number, course[x].type, course[x].difficulty, course[x].count, course[x].score);
+			}
+			fclose(fp);
+
+			cout << "评分成功！" << endl;
+			choice2(ID);
+		}		
+	}
+}
