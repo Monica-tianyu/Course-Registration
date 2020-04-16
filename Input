@@ -1,0 +1,89 @@
+#include"data.h"
+#include<iostream>
+#include<cstdio>
+#include<cstdlib>
+#include<vector>
+
+using namespace std;
+
+//录入课程
+void Input()
+{
+	//检查是否已录入课程
+	FILE *fp = fopen("current_course.txt", "r");
+	if (fp != NULL)
+	{
+		cout << "课程已录入！" << endl;
+		fclose(fp);
+		choice1();
+		return ;
+	}
+	
+
+	//读取defaultcourse.txt中数据到结构体
+	cout << "请输入需要导入的文件名称：";
+	char file_name[100];
+	cin >> file_name;
+	fp = fopen(file_name, "r");
+	if (fp == NULL)
+	{
+		cout << "打开失败！" << endl;
+		exit(-1);
+	}
+	vector<Course> course;
+	Course c;
+	fscanf(fp, "%s%s%s%d%d%s", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type);
+	course.push_back(c);
+	while (!feof(fp))
+	{		
+		
+		fscanf(fp, "%s%s%s%d%d%s", &c.course_number, &c.course_name, &c.teacher, &c.capacity, &c.current_number, &c.type);
+		course.push_back(c);
+	}
+	fclose(fp);
+	
+	//录入新文件current_course.txt
+	fp = fopen("current_course.txt", "w");
+	if (fp == NULL)
+	{
+		cout << "打开失败！" << endl;
+		exit(-1);
+	}
+	unsigned i = 0;
+	for (;i<course.size(); ++i)
+	{
+		fprintf(fp, "%10s\t%10s\t%10s\t%10d\t%10d\t%10s%10s%10d%10f\n", course[i].course_number, course[i].course_name, course[i].teacher, course[i].capacity, course[i].current_number, course[i].type,"NULL",0,0.0);
+	}
+	fclose(fp);
+	//cout << course.size() << endl;
+
+	//创建初始助教文件
+	
+	fp = fopen("assistant.txt", "w+");
+	if (fp == NULL)
+	{
+		cout << "创建失败！" << endl;
+		exit(-1);
+	}
+	vector<Assistant> assistant;
+	Assistant a;
+	for (i = 0; i < course.size(); ++i)
+	{
+		strcpy(a.course_number, course[i].course_number);
+		strcpy(a.assistant, "NULL");
+		assistant.push_back(a);
+	}
+	for (i = 0; i < course.size(); ++i)
+	{
+		fprintf(fp, "%s\t%s\n", assistant[i].course_number, assistant[i].assistant);
+	}
+	fclose(fp);
+
+	cout << "课程录入成功！" << endl;
+	
+	show_course();
+	choice1();
+}
+
+
+//defaultcourse.txt 
